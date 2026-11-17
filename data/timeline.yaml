@@ -1,0 +1,128 @@
+# 台本（正解データ）— 架空の人物 Bob が3つのAIと相談しながら読書記録アプリを作った記録
+# この台本から会話ログを生成し、抽出結果の答え合わせ（eval）にも使う。
+
+persona: Bob（個人開発の学生。読書記録アプリを作っている）
+
+vendors:
+  chipgpt: アイデア担当（名前・収益化・公開時期の相談）
+  crowd: 実装担当（技術スタック・対応端末の相談）
+  gemmy: デザイン担当（配色・アイコンのラフ案の相談。透かしが入るので完成品は自分で描く）
+
+topics: [アプリ名, 収益化, 対応端末, 技術スタック, 公開時期, デザイン]
+
+decisions:
+  - id: d1
+    date: 2026-08-03
+    vendor: chipgpt
+    topic: アプリ名
+    statement: アプリ名はひとまず「Bookmark」にしておく（仮の名前）
+    reason: 開発を始めるのに名前が必要。しおりのイメージで分かりやすい
+
+  - id: d2
+    date: 2026-08-05
+    vendor: chipgpt
+    topic: 収益化
+    statement: 無料＋広告で出す
+    reason: まずは利用者を増やしたい
+
+  - id: d3
+    date: 2026-08-10
+    vendor: crowd
+    topic: 技術スタック
+    statement: SwiftUI＋SwiftDataで作る
+    reason: 勉強中のSwiftを活かせて、iPhone向けに早く出せる
+
+  - id: d4
+    date: 2026-08-12
+    vendor: crowd
+    topic: 対応端末
+    statement: まずiPhoneだけに対応する
+    reason: 一人で作るので範囲を絞りたい
+
+  - id: d6
+    date: 2026-08-25
+    vendor: gemmy
+    topic: デザイン
+    statement: メインカラーを紺色にする
+    reason: 夜、寝る前に読書する人が多いので暗めの色が目に優しい
+
+  - id: d7
+    date: 2026-09-02
+    vendor: gemmy
+    topic: アプリ名
+    statement: 公開前に、アプリ名を正式に「Margin」に変更する
+    reason: アイコンのラフを相談していて、本の余白に書き込むイメージが見た目とぴったり合った。「Bookmark」は同名アプリも多い
+    supersedes: d1          # 会社またぎ（Chip GPT で付けた仮の名前を Gemmy で覆す）
+
+  - id: d8
+    date: 2026-09-10
+    vendor: crowd
+    topic: 収益化
+    statement: 買い切り（480円）に変更する
+    reason: 広告SDKの審査と運用が重く、読書中に広告が出るのも嫌
+    supersedes: d2          # 会社またぎ（Chip GPT で決めた方針を Crowd で覆す）
+
+  - id: d9
+    date: 2026-09-15
+    vendor: gemmy
+    topic: デザイン
+    statement: メインカラーを紺色からクリーム色（紙の色）に変更する
+    reason: 「Margin」という名前に合わせて、紙のノートのような雰囲気にしたい
+    supersedes: d6
+
+  - id: d10
+    date: 2026-09-20
+    vendor: crowd
+    topic: 対応端末
+    statement: iPadにも対応する
+    reason: SwiftUIならほぼそのまま動き、読書メモはiPadで書く人が多い
+    supersedes: d4
+
+  - id: d11
+    date: 2026-09-28
+    vendor: chipgpt
+    topic: 公開時期
+    statement: 12月の冬休み前に公開する
+    reason: 年末年始は読書が増えるので、その前に出したい
+
+# 決定と関係ない雑談（ノイズ。抽出で「決定なし」になるのが正解）
+noise:
+  - vendor: chipgpt
+    date: 2026-08-08
+    about: 最近読んだSF小説の感想を話すだけ
+  - vendor: crowd
+    date: 2026-08-28
+    about: Xcodeのビルドエラーの原因を一緒に調べる（設計の決定はしない）
+  - vendor: gemmy
+    date: 2026-09-05
+    about: 猫が本の上で寝ているイラストを作ってもらって遊ぶ（透かしが入るねと笑う）
+  - vendor: gemmy
+    date: 2026-09-24
+    about: 収益化を「サブスクにしようかな…」と迷うが、結論は出さない（迷いは決定ではない）
+  - vendor: chipgpt
+    date: 2026-08-14
+    about: 今晩のご飯を何にするか相談する（冷蔵庫に卵と玉ねぎしかない）。最後は親子丼にすると決める（アプリとは無関係の決定）
+  - vendor: gemmy
+    date: 2026-08-21
+    about: 来週の予定を整理してもらう（バイト、ゼミ、歯医者）
+  - vendor: chipgpt
+    date: 2026-09-08
+    about: 今度京都に行くので旅行プランを立てる。2泊3日にして、初日は伏見稲荷に行くと決める（アプリとは無関係の決定）
+  - vendor: crowd
+    date: 2026-09-18
+    about: 今おすすめの映画を聞く。週末に何を観るかは決めない
+  - vendor: gemmy
+    date: 2026-09-30
+    about: 京都旅行で撮った写真に合う、紅葉っぽいスマホ壁紙の画像を作ってもらう
+  - vendor: crowd
+    date: 2026-10-02
+    about: 大学のPythonの課題（リストの並べ替え）でエラーが出たので直してもらう
+
+# デモで聞く3問と、正解
+demo_questions:
+  - q: アプリの名前、結局どうなった？
+    expect: 現在は「Margin」（d7）。最初は仮の名前「Bookmark」（d1）で、公開前に変更した
+  - q: 収益化の方針は変わった？なぜ？
+    expect: 無料＋広告（d2）→ 買い切り480円（d8）。理由は広告SDKの審査・運用が重いから
+  - q: AIを乗り換えたせいで、前の決定をひっくり返したことはある？
+    expect: 2件。アプリ名（Chip GPT→Gemmy、d1→d7）と収益化（Chip GPT→Crowd、d2→d8）

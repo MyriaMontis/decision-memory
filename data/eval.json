@@ -1,0 +1,55 @@
+{
+  "without_verify": {
+    "score": 19,
+    "total": 30,
+    "junk": [
+      {
+        "date": "2026-08-21",
+        "vendor": "gemmy",
+        "title": "来週の予定整理",
+        "topic": "デザイン",
+        "statement": "配色も試してみるわ。",
+        "statement_en": "I'll try out the color scheme."
+      },
+      {
+        "date": "2026-09-05",
+        "vendor": "gemmy",
+        "title": "猫と本のイラスト案",
+        "topic": "デザイン",
+        "statement": "自分で最終調整してみるよ。",
+        "statement_en": "I will do the final adjustments myself."
+      },
+      {
+        "date": "2026-09-30",
+        "vendor": "gemmy",
+        "title": "京都の紅葉壁紙",
+        "topic": "デザイン",
+        "statement": "シルエットはちょっと細かくしすぎない方がいい",
+        "statement_en": "The silhouette should not be overly detailed."
+      },
+      {
+        "date": "2026-09-30",
+        "vendor": "gemmy",
+        "title": "京都の紅葉壁紙",
+        "topic": "デザイン",
+        "statement": "葉は丸みを帯びたデザインにしたい",
+        "statement_en": "The leaves should have a rounded design."
+      },
+      {
+        "date": "2026-09-30",
+        "vendor": "gemmy",
+        "title": "京都の紅葉壁紙",
+        "topic": "デザイン",
+        "statement": "色はオレンジと赤の間で、少し黄色も混ぜ、青空も入れたい",
+        "statement_en": "Use colors between orange and red with some yellow, and include a blue sky."
+      }
+    ],
+    "wrong_links": 6
+  },
+  "with_verify": {
+    "score": 24,
+    "total": 24,
+    "junk": [],
+    "wrong_links": 0
+  }
+}

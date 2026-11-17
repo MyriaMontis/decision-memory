@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision Memory</title>
+<script src="force-graph.min.js"></script>
+<style>
+  :root {
+    --bg: #05060d; --panel: rgba(14, 16, 30, .82); --line: rgba(255,255,255,.08);
+    --text: #e8e9f3; --muted: #8b8fa8;
+    --chipgpt: #2fd39a; --crowd: #f0925f; --gemmy: #8fb1ff; --topic: #f6e7c1; --ok: #4ade80; --ng: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; overflow: hidden; }
+  #sky { position: fixed; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 60% 45% at 30% 40%, rgba(90, 70, 200, .22), transparent 70%),
+      radial-gradient(ellipse 50% 40% at 60% 65%, rgba(30, 140, 170, .16), transparent 70%),
+      radial-gradient(ellipse 35% 30% at 20% 75%, rgba(200, 90, 140, .12), transparent 70%); }
+  #stars { position: fixed; inset: 0; pointer-events: none; }
+  #graph { position: fixed; inset: 0; right: 420px; }
+  header { position: fixed; left: 24px; top: 18px; pointer-events: none; }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: .04em; font-weight: 600; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .legend { position: fixed; left: 24px; bottom: 18px; display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+  aside { position: fixed; top: 0; right: 0; bottom: 0; width: 420px; background: var(--panel);
+    border-left: 1px solid var(--line); backdrop-filter: blur(12px); padding: 20px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 14px; }
+  button { font: inherit; color: var(--text); background: rgba(255,255,255,.05); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; text-align: left; cursor: pointer; transition: background .2s; }
+  button:hover { background: rgba(255,255,255,.1); }
+  #import { text-align: center; font-weight: 600; background: rgba(143,177,255,.14); border-color: rgba(143,177,255,.35); }
+  .qs { display: flex; flex-direction: column; gap: 8px; }
+  .label { font-size: 11px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+  form { display: flex; gap: 8px; }
+  input[type=text] { flex: 1; font: inherit; color: var(--text); background: rgba(0,0,0,.3); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; }
+  .toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer; }
+  .card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: rgba(0,0,0,.25); }
+  .card h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; }
+  .card.bad { border-color: rgba(248,113,113,.35); }
+  .card.good { border-color: rgba(74,222,128,.35); }
+  .answer { font-size: 15px; line-height: 1.7; white-space: pre-wrap; }
+  .steps { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .step { font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .step.ok { color: var(--ok); border-color: rgba(74,222,128,.3); }
+  .step.ng { color: var(--ng); border-color: rgba(248,113,113,.3); }
+  details { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  pre { white-space: pre-wrap; font-size: 11px; background: rgba(0,0,0,.35); padding: 8px; border-radius: 8px; }
+  .spin { color: var(--muted); font-size: 13px; }
+  .tag { font-size: 11px; color: var(--muted); font-weight: 400; }
+  .eval { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: rgba(0,0,0,.25); }
+  .eval h3 { margin: 0 0 10px; font-size: 13px; display: flex; justify-content: space-between; align-items: baseline; }
+  .bar { display: grid; grid-template-columns: 120px 1fr 54px; align-items: center; gap: 8px; font-size: 12px; margin: 6px 0; }
+  .bar .track { height: 8px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 99px; transition: width 1.2s ease; width: 0; }
+  .bar b { text-align: right; font-variant-numeric: tabular-nums; }
+  .junk { font-size: 11px; color: var(--muted); margin: 6px 0 0; padding-left: 16px; }
+  .junk li { margin: 2px 0; }
+  #rerun { padding: 3px 8px; font-size: 11px; }
+  .ja { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 2px; letter-spacing: 0; }
+  .answer .ja { font-size: 12px; line-height: 1.6; margin-top: 8px; }
+  #import .ja { text-align: center; }
+  .row { display: flex; gap: 8px; }
+  .row #import { flex: 1; }
+  #reset { flex: 0 0 auto; color: var(--muted); }
+  .project { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .project select { flex: 1; font: inherit; color: var(--text); background: rgba(0,0,0,.3); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 10px; }
+  .num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; margin-right: 8px;
+    font-size: 11px; font-weight: 700; background: rgba(143,177,255,.25); color: #dfe7ff; vertical-align: 1px; }
+  .q { display: grid; grid-template-columns: 28px 1fr; }
+  .q .num { margin: 2px 0 0; }
+</style>
+</head>
+<body>
+<div id="sky"></div>
+<canvas id="stars"></canvas>
+<div id="graph"></div>
+<header>
+  <h1>Decision Memory</h1>
+  <p>A memory harness that remembers what you decided — across Chip GPT, Crowd and Gemmy.
+    <span class="ja">Chip GPT・Crowd・Gemmy をまたいで「何を決めたか」を覚えるハーネス</span></p>
+</header>
+<div class="legend">
+  <span><i style="background:var(--chipgpt)"></i>Chip GPT</span>
+  <span><i style="background:var(--crowd)"></i>Crowd</span>
+  <span><i style="background:var(--gemmy)"></i>Gemmy</span>
+  <span><i style="background:var(--topic)"></i>Topic <small>トピック</small></span>
+  <span><i style="background:#555a6e"></i>Superseded decision <small>置き換え済みの決定</small></span>
+</div>
+
+<aside>
+  <div class="row">
+    <button id="import"><span class="num">1</span>Import chat logs<br>from 3 AIs<span class="ja">3社の会話ログを取り込む</span></button>
+    <button id="reset" title="Clear the graph and answers">↺ Reset<span class="ja">リセット</span></button>
+  </div>
+  <label class="project"><span>Project<span class="ja">プロジェクト</span></span>
+    <select id="project">
+      <option>📚 Reading-log app</option>
+      <option disabled>＋ Add another project…</option>
+    </select></label>
+  <div class="label">Ask about this project <small>このプロジェクトについて質問</small></div>
+  <div class="qs">
+    <button class="q" data-q="What did I end up naming the app?"><span class="num">2</span><span>What did I end up naming the app?<span class="ja">アプリの名前、結局どうなった？</span></span></button>
+    <button class="q" data-q="Did my monetization plan change? Why?"><span class="num">3</span><span>Did my monetization plan change? Why?<span class="ja">収益化の方針は変わった？なぜ？</span></span></button>
+    <button class="q" data-q="Did switching AIs ever make me reverse an earlier decision?"><span class="num">4</span><span>Did switching AIs ever make me reverse an earlier decision?<span class="ja">AIを乗り換えたせいで、前の決定をひっくり返したことはある？</span></span></button>
+  </div>
+  <form id="f"><input type="text" id="qin" placeholder="Ask anything / 自由に質問"><button>Ask</button></form>
+  <label class="toggle"><input type="checkbox" id="cmp" checked> Compare with no harness (Chip GPT memory only) <small>ハーネスなしと比較</small></label>
+  <div id="out"></div>
+  <div class="eval" id="eval"></div>
+</aside>
+
+<script>
+const COLORS = { chipgpt: '#2fd39a', crowd: '#f0925f', gemmy: '#8fb1ff' };
+const LABEL = { chipgpt: 'Chip GPT', crowd: 'Crowd', gemmy: 'Gemmy' };
+const TOPIC_EN = { 'アプリ名': 'App name', '収益化': 'Monetization', '対応端末': 'Devices', '技術スタック': 'Tech stack', '公開時期': 'Launch', 'デザイン': 'Design' };
+let baseZoom = null, full = null, hl = new Set(), hlLinks = new Set(), t0 = performance.now();
+
+// ── 星 ─────────────────────────────
+const sc = document.getElementById('stars'), sx = sc.getContext('2d');
+const stars = Array.from({ length: 220 }, () => ({ x: Math.random(), y: Math.random(), r: Math.random() * 1.2 + .2, p: Math.random() * 6 }));
+function drawStars(t) {
+  sc.width = innerWidth; sc.height = innerHeight;
+  for (const s of stars) {
+    sx.globalAlpha = .25 + .35 * (1 + Math.sin(t / 1400 + s.p)) / 2;
+    sx.fillStyle = '#fff'; sx.beginPath(); sx.arc(s.x * sc.width, s.y * sc.height, s.r, 0, 7); sx.fill();
+  }
+  requestAnimationFrame(drawStars);
+}
+requestAnimationFrame(drawStars);
+
+// ── グラフ ───────────────────────────
+const el = document.getElementById('graph');
+const G = ForceGraph()(el)
+  .backgroundColor('rgba(0,0,0,0)')
+  .width(innerWidth - 420).height(innerHeight)
+  .nodeId('id')
+  .d3VelocityDecay(0.22)
+  .d3AlphaDecay(0.008)
+  .cooldownTime(Infinity)
+  .linkColor(l => hl.size ? (hlLinks.has(l) ? (l.type === 'SUPERSEDES' ? 'rgba(255,220,150,.95)' : 'rgba(200,215,255,.7)') : 'rgba(255,255,255,.03)')
+                          : (l.type === 'SUPERSEDES' ? 'rgba(255,220,150,.45)' : 'rgba(180,190,230,.12)'))
+  .linkWidth(l => hlLinks.has(l) ? (l.type === 'SUPERSEDES' ? 3 : 1.6) : (l.type === 'SUPERSEDES' ? 1.4 : .6))
+  .linkLineDash(l => l.type === 'SUPERSEDES' ? [4, 3] : null)
+  .linkDirectionalArrowLength(l => l.type === 'SUPERSEDES' ? 5 : 0)
+  .linkDirectionalArrowRelPos(1)
+  .linkDirectionalArrowColor(() => 'rgba(255,220,150,.8)')
+  .linkDirectionalParticles(l => hlLinks.has(l) ? 4 : 0)
+  .linkDirectionalParticleWidth(3)
+  .linkDirectionalParticleSpeed(.008)
+  .linkDirectionalParticleColor(l => l.type === 'SUPERSEDES' ? '#ffe2a0' : '#cfe0ff')
+  .nodeLabel(n => n.kind === 'Decision' ? `${n.label_en || n.label}<br><small>${n.label}<br>${n.date} / ${LABEL[n.vendor] || ''} / ${n.status}</small>` : n.kind === 'Topic' ? `${TOPIC_EN[n.label] || n.label} / ${n.label}` : n.kind === 'Conversation' ? `Chat with ${LABEL[n.vendor] || ''} · ${n.date}<br><small>${n.label}</small>` : n.kind === 'Vendor' ? LABEL[n.vendor] : (n.label_en ? `Reason: ${n.label_en}<br><small>${n.label}</small>` : n.label))
+  .nodeCanvasObject(drawNode)
+  .nodePointerAreaPaint((n, color, ctx) => { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(n.x, n.y, size(n) + 2, 0, 7); ctx.fill(); });
+G.d3Force('charge').strength(-140);
+const ANCHOR = { 'vendor:chipgpt': [-230, 120], 'vendor:crowd': [230, 120], 'vendor:gemmy': [0, -230] };
+const pull = a => G.graphData().nodes.forEach(n => {
+  const p = ANCHOR[n.id];
+  if (p) { n.fx = p[0]; n.fy = p[1]; return; }
+  n.vx -= n.x * 0.004 * a; n.vy -= n.y * 0.004 * a;
+});
+pull.initialize = () => {};
+G.d3Force('pull', pull);
+G.d3Force('link').distance(l => l.type === 'SUPERSEDES' ? 60 : l.type === 'ON' ? 70 : 36);
+addEventListener('resize', () => G.width(innerWidth - 420).height(innerHeight));
+
+function size(n) {
+  return { Vendor: 11, Topic: 8, Decision: n.status === 'superseded' ? 4.5 : 7, Conversation: 3.2, Reason: 2 }[n.kind] || 3;
+}
+function color(n) {
+  if (n.kind === 'Topic') return '#f6e7c1';
+  if (n.kind === 'Reason') return '#7d8299';
+  if (n.kind === 'Decision' && n.status === 'superseded') return '#555a6e';
+  return COLORS[n.vendor] || '#aaa';
+}
+function drawNode(n, ctx, scale) {
+  const t = performance.now() - t0;
+  const on = !hl.size || hl.has(n.id);
+  const r = size(n) * (hl.has(n.id) ? 1.35 : 1);
+  ctx.globalAlpha = on ? 1 : .12;
+  const glow = n.kind === 'Vendor' || (n.kind === 'Decision' && n.status === 'active') || hl.has(n.id);
+  if (glow) {
+    const pulse = 1 + .15 * Math.sin(t / 700 + (n.x || 0));
+    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 3.2 * pulse);
+    g.addColorStop(0, color(n) + 'aa'); g.addColorStop(1, color(n) + '00');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(n.x, n.y, r * 3.2 * pulse, 0, 7); ctx.fill();
+  }
+  ctx.fillStyle = color(n); ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 7); ctx.fill();
+  // ラベル: トピック・会社・決定（ズームまたは強調時）
+  const showLabel = n.kind === 'Topic' || n.kind === 'Vendor' || (n.kind === 'Decision' && (scale > 1.6 || hl.has(n.id)));
+  if (showLabel) {
+    const fs = (n.kind === 'Vendor' ? 13 : n.kind === 'Topic' ? 11 : 10) / Math.min(scale, 2.2) * 1.4;
+    ctx.font = `${n.kind === 'Decision' ? 400 : 600} ${fs}px "Hiragino Sans", sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = n.kind === 'Decision' && n.status === 'superseded' ? 'rgba(200,200,215,.75)' : 'rgba(240,242,255,.95)';
+    const txt = n.kind === 'Vendor' ? LABEL[n.vendor] : n.kind === 'Decision' ? (n.label_en || n.label).slice(0, 34) : (TOPIC_EN[n.label] || n.label);
+    ctx.fillText(txt, n.x, n.y + r + 2);
+    if (n.kind === 'Decision' && n.status === 'superseded' && hl.has(n.id)) {
+      const w = ctx.measureText(txt).width;
+      ctx.strokeStyle = 'rgba(248,113,113,.8)'; ctx.lineWidth = 1 / scale * 1.2;
+      ctx.beginPath(); ctx.moveTo(n.x - w / 2, n.y + r + 2 + fs / 2); ctx.lineTo(n.x + w / 2, n.y + r + 2 + fs / 2); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ── 取り込み（グラフが育つ） ─────────────
+async function importGraph() {
+  hl = new Set(); hlLinks = new Set();
+  full = await (await fetch('/graph')).json();
+  const byId = Object.fromEntries(full.nodes.map(n => [n.id, n]));
+  const links = full.links.map(l => ({ ...l }));
+  // 会話を日付順に1本ずつ足す
+  const convs = full.nodes.filter(n => n.kind === 'Conversation').sort((a, b) => a.date.localeCompare(b.date));
+  const shown = new Set(full.nodes.filter(n => n.kind === 'Vendor' || n.kind === 'Topic').map(n => n.id));
+  const data = { nodes: [...shown].map(id => byId[id]), links: [] };
+  G.graphData(data);
+  for (const c of convs) {
+    await new Promise(r => setTimeout(r, 380));
+    const add = new Set([c.id]);
+    for (const l of links) if (l.source === c.id) add.add(l.target);       // 会話 → 決定
+    for (const l of links) if (add.has(l.source) && l.type === 'BECAUSE') add.add(l.target);
+    add.forEach(id => shown.add(id));
+    const { nodes, links: cur } = G.graphData();
+    const newNodes = [...add].filter(id => !nodes.find(n => n.id === id)).map(id => {
+      const n = byId[id]; const v = nodes.find(m => m.id === 'vendor:' + c.vendor);
+      return Object.assign(n, { x: (v?.x || 0) + Math.random() * 20 - 10, y: (v?.y || 0) + Math.random() * 20 - 10 });
+    });
+    const newLinks = links.filter(l => shown.has(l.source) && shown.has(l.target) && !l._added);
+    newLinks.forEach(l => l._added = true);
+    G.graphData({ nodes: [...nodes, ...newNodes], links: [...cur, ...newLinks] });
+  }
+  setTimeout(() => { G.zoomToFit(800, 60); setTimeout(() => baseZoom = G.zoom(), 900); }, 600);
+}
+
+// ── 質問 ─────────────────────────────
+function highlight(ids) {
+  hl = new Set(ids);
+  const { nodes, links } = G.graphData();
+  // 強調する決定の会社も光らせる
+  nodes.forEach(n => { if (hl.has(n.id) && n.vendor && n.kind !== 'Vendor') hl.add('vendor:' + n.vendor); });
+  hlLinks = new Set(links.filter(l => hl.has(l.source.id ?? l.source) && hl.has(l.target.id ?? l.target)));
+  G.linkDirectionalParticles(G.linkDirectionalParticles());
+  const pts = nodes.filter(n => hl.has(n.id) && n.kind !== 'Vendor');
+  if (pts.length) {
+    // 光った部分に寄るが、全体表示の1.3倍までしか拡大しない（ラベルが重ならないように）
+    const all = nodes.filter(n => hl.has(n.id));
+    const xs = all.map(n => n.x), ys = all.map(n => n.y);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const fit = Math.min(G.width() / (x1 - x0 + 300), G.height() / (y1 - y0 + 300));
+    G.centerAt((x0 + x1) / 2, (y0 + y1) / 2, 900);
+    G.zoom(Math.min(fit, (baseZoom || fit) * 1.3), 900);
+  }
+}
+
+const out = document.getElementById('out');
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+async function ask(q) {
+  if (!G.graphData().nodes.length) await importGraph();
+  const cmp = document.getElementById('cmp').checked;
+  out.innerHTML = (cmp ? `<div class="card bad" id="b"><h3><span>Without harness <span class="ja">ハーネスなし</span></span><span class="tag">Chip GPT memory only</span></h3><div class="spin">Thinking…</div></div>` : '')
+    + `<div class="card good" id="h" style="margin-top:12px"><h3><span>With harness <span class="ja">ハーネスあり</span></span><span class="tag">decision graph · 3 AIs</span></h3><div class="spin">Querying the graph…</div></div>`;
+  hl = new Set(); hlLinks = new Set();
+  const post = (url) => fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ q }) }).then(r => r.json());
+  if (cmp) post('/baseline').then(b => {
+    document.querySelector('#b .spin').outerHTML = `<div class="answer">${esc(b.answer.en)}<span class="ja">${esc(b.answer.ja)}</span></div>`;
+  });
+  const r = await post('/ask');
+  highlight(r.path_ids);
+  const steps = r.steps.map(s => `<span class="step ${s.ok ? 'ok' : 'ng'}">${{ cypher: 'Cypher', guardrail: 'Guardrail', fallback: 'Template query', verify: 'Evidence check' }[s.step]} ${s.ok ? '✓' : '✗'} ${esc(s.detail)}</span>`).join('');
+  document.querySelector('#h .spin').outerHTML = `<div class="answer">${esc(r.answer.en)}<span class="ja">${esc(r.answer.ja)}</span></div>
+    <div class="steps"><span class="step ok">Read-only ✓</span>${steps}<span class="step">${(r.ms / 1000).toFixed(1)}s</span></div>
+    <details><summary>Cypher that ran</summary><pre>${esc(r.cypher)}</pre></details>`;
+  document.getElementById('h').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+document.querySelectorAll('.q').forEach(b => b.onclick = () => ask(b.dataset.q));
+document.getElementById('f').onsubmit = e => { e.preventDefault(); const q = document.getElementById('qin').value.trim(); if (q) ask(q); };
+document.getElementById('import').onclick = importGraph;
+document.getElementById('reset').onclick = () => {
+  hl = new Set(); hlLinks = new Set();
+  G.graphData({ nodes: [], links: [] });
+  out.innerHTML = '';
+  document.querySelector('aside').scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ── 評価（台本に対するスコア） ───────────────
+function renderEval(e) {
+  const el = document.getElementById('eval');
+  if (!e.with_verify) { el.style.display = 'none'; return; }
+  const row = (name, ja, r, col) => `<div class="bar"><span>${name}<span class="ja">${ja}</span></span>
+    <div class="track"><div class="fill" style="background:${col}" data-w="${100 * r.score / r.total}"></div></div><b>${r.score}/${r.total}</b></div>`;
+  const nv = e.without_verify, wv = e.with_verify;
+  el.innerHTML = `<h3><span><span class="num">5</span>Eval vs. ground truth <span class="ja">正解表（台本）と比べた、決定の抜き出しの点数</span></span>
+      <button id="rerun">Re-run</button></h3>
+    ${row('No verification', '検証なし', nv, 'var(--ng)')}
+    ${row('With verification', '検証あり', wv, 'var(--ok)')}
+    <details><summary>Without verification: ${nv.junk.length} chit-chat lines mistaken for decisions → ${nv.wrong_links} wrong history links
+      <span class="ja">検証なしだと、雑談の発言を ${nv.junk.length} 回「アプリの決定」と勘違いし、そのせいで変更履歴を ${nv.wrong_links} 本まちがえた</span></summary>
+      <ul class="junk">${nv.junk.map(j => `<li>${esc(j.title)} → [${TOPIC_EN[j.topic] || j.topic}] ${esc(j.statement_en || j.statement)}</li>`).join('')}</ul></details>`;
+  requestAnimationFrame(() => setTimeout(() => el.querySelectorAll('.fill').forEach(f => f.style.width = f.dataset.w + '%'), 50));
+  document.getElementById('rerun').onclick = async () => {
+    document.getElementById('rerun').textContent = 'Running…';
+    renderEval(await (await fetch('/eval/run', { method: 'POST' })).json());
+  };
+}
+fetch('/eval').then(r => r.json()).then(renderEval);
+G.onBackgroundClick(() => { hl = new Set(); hlLinks = new Set(); G.linkDirectionalParticles(G.linkDirectionalParticles()); });
+</script>
+</body>
+</html>

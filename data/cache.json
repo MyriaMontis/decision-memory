@@ -1,0 +1,181 @@
+{
+  "ask": {
+    "What did I end up naming the app?": {
+      "answer": {
+        "en": "You ended up naming the app “Margin”. This decision was made in a conversation with Gemmy on 2026-09-02, and it is currently active.",
+        "ja": "アプリ名は「Margin」に決定しました。この決定は2026年9月2日にGemmyとの会話で行われ、現在も有効です。"
+      },
+      "cypher": "MATCH (t:Topic {name:'アプリ名'})<-[:ABOUT]-(d:Decision)<-[:CONTAINS]-(c:Conversation)-[:ON]->(v:Vendor)\nOPTIONAL MATCH (d)-[:SUPERSEDES]->(old:Decision)\nOPTIONAL MATCH (d)-[:BECAUSE]->(r:Reason)\nRETURN d.id AS id, d.statement AS statement, d.date AS date, d.status AS status,\n       v.name AS vendor, r.text AS reason, old.id AS old_id, c.id AS conv_id\nORDER BY d.date DESC\nLIMIT 1",
+      "source": "llm",
+      "rows": [
+        {
+          "id": "gemmy-a0ccf9f0#0",
+          "statement": "アプリ名を「Margin」に変更する",
+          "date": "2026-09-02",
+          "status": "active",
+          "vendor": "gemmy",
+          "reason": "余白に書くイメージが見た目とぴったり合うし、同名アプリが多い「Bookmark」より断然いい",
+          "old_id": "chipgpt-1281add3#0",
+          "conv_id": "gemmy-a0ccf9f0"
+        }
+      ],
+      "path_ids": [
+        "chipgpt-1281add3#0",
+        "gemmy-a0ccf9f0#0",
+        "gemmy-a0ccf9f0",
+        "chipgpt-1281add3",
+        "gemmy-a0ccf9f0",
+        "topic:アプリ名"
+      ],
+      "steps": [
+        {
+          "step": "cypher",
+          "ok": true,
+          "detail": "1 rows"
+        },
+        {
+          "step": "verify",
+          "ok": true,
+          "detail": "6 evidence nodes exist"
+        }
+      ],
+      "ms": 3111
+    },
+    "Did my monetization plan change? Why?": {
+      "answer": {
+        "en": "Yes, your monetization plan changed. The active decision, made on 2026-09-10 with Crowd, is to switch to a one‑time purchase, replacing the earlier 2026-08-05 decision with Chip GPT to offer a free‑plus‑ads model; the change was chosen to eliminate ad‑review work and avoid ads appearing while reading.",
+        "ja": "はい、マネタイズプランは変更されました。現在有効な決定は2026‑09‑10にCrowdとの会話で決めた「買い切り」に変更することで、2026‑08‑05にChip GPTと決めた「無料＋広告」に置き換えられました。理由は広告審査の手間がなくなり、読書中に広告が出ないようにするためです。"
+      },
+      "cypher": "MATCH (t:Topic {name:'収益化'})<-[:ABOUT]-(new:Decision)-[:SUPERSEDES]->(old:Decision)\nMATCH (newConv:Conversation)-[:CONTAINS]->(new), (oldConv:Conversation)-[:CONTAINS]->(old)\nMATCH (newConv)-[:ON]->(newVendor:Vendor), (oldConv)-[:ON]->(oldVendor:Vendor)\nOPTIONAL MATCH (new)-[:BECAUSE]->(r:Reason)\nRETURN new.id AS id,\n       new.statement AS statement,\n       new.date AS date,\n       newVendor.name AS vendor,\n       old.id AS old_id,\n       old.statement AS old_statement,\n       old.date AS old_date,\n       oldVendor.name AS old_vendor,\n       r.text AS reason,\n       newConv.id AS conv_id,\n       oldConv.id AS old_conv_id\nORDER BY new.date",
+      "source": "llm",
+      "rows": [
+        {
+          "id": "crowd-b20c6892#0",
+          "statement": "買い切りに変更する",
+          "date": "2026-09-10",
+          "vendor": "crowd",
+          "old_id": "chipgpt-adaa8403#0",
+          "old_statement": "無料＋広告にする",
+          "old_date": "2026-08-05",
+          "old_vendor": "chipgpt",
+          "reason": "広告審査の手間がなくなり、読書中に広告が出ない",
+          "conv_id": "crowd-b20c6892",
+          "old_conv_id": "chipgpt-adaa8403"
+        }
+      ],
+      "path_ids": [
+        "chipgpt-adaa8403#0",
+        "crowd-b20c6892#0",
+        "chipgpt-adaa8403",
+        "crowd-b20c6892",
+        "chipgpt-adaa8403",
+        "crowd-b20c6892",
+        "topic:収益化"
+      ],
+      "steps": [
+        {
+          "step": "cypher",
+          "ok": true,
+          "detail": "1 rows"
+        },
+        {
+          "step": "verify",
+          "ok": true,
+          "detail": "7 evidence nodes exist"
+        }
+      ],
+      "ms": 3088
+    },
+    "Did switching AIs ever make me reverse an earlier decision?": {
+      "answer": {
+        "en": "Yes. Switching AIs led you to reverse earlier decisions: on 2026-09-02 you changed the app name from \"Bookmark\" (decided with Chip GPT on 2026-08-03) to \"Margin\" with Gemmy, citing a better visual fit; and on 2026-09-10 you switched the pricing model from \"free + ads\" (decided with Chip GPT on 2026-08-05) to a one‑time purchase with Crowd, to avoid ad‑review work and interruptions.",
+        "ja": "はい。AIを切り替えたことで以前の決定を取り消しています。2026年9月2日に、Chip GPT（2026年8月3日）と決めたアプリ名「Bookmark」をGemmyと話し合い「Margin」に変更し、見た目の一致を理由にしました。また、2026年9月10日に、Chip GPT（2026年8月5日）と決めた「無料＋広告」からCrowdと話し合い「買い切り」に変更し、広告審査の手間と読書中の広告表示を避けるためです。"
+      },
+      "cypher": "MATCH (newConv:Conversation)-[:CONTAINS]->(newDec:Decision)-[:SUPERSEDES]->(oldDec:Decision)<-[:CONTAINS]-(oldConv:Conversation)\nMATCH (newConv)-[:ON]->(newVendor:Vendor), (oldConv)-[:ON]->(oldVendor:Vendor)\nWHERE newVendor.name <> oldVendor.name\nOPTIONAL MATCH (newDec)-[:BECAUSE]->(r:Reason)\nRETURN newDec.id AS id,\n       newDec.statement AS statement,\n       newDec.date AS date,\n       newVendor.name AS vendor,\n       oldDec.id AS old_id,\n       oldDec.statement AS old_statement,\n       oldDec.date AS old_date,\n       oldVendor.name AS old_vendor,\n       r.text AS reason,\n       newConv.id AS conv_id,\n       oldConv.id AS old_conv_id\nORDER BY newDec.date",
+      "source": "llm",
+      "rows": [
+        {
+          "id": "gemmy-a0ccf9f0#0",
+          "statement": "アプリ名を「Margin」に変更する",
+          "date": "2026-09-02",
+          "vendor": "gemmy",
+          "old_id": "chipgpt-1281add3#0",
+          "old_statement": "アプリ名を「Bookmark」にする",
+          "old_date": "2026-08-03",
+          "old_vendor": "chipgpt",
+          "reason": "余白に書くイメージが見た目とぴったり合うし、同名アプリが多い「Bookmark」より断然いい",
+          "conv_id": "gemmy-a0ccf9f0",
+          "old_conv_id": "chipgpt-1281add3"
+        },
+        {
+          "id": "crowd-b20c6892#0",
+          "statement": "買い切りに変更する",
+          "date": "2026-09-10",
+          "vendor": "crowd",
+          "old_id": "chipgpt-adaa8403#0",
+          "old_statement": "無料＋広告にする",
+          "old_date": "2026-08-05",
+          "old_vendor": "chipgpt",
+          "reason": "広告審査の手間がなくなり、読書中に広告が出ない",
+          "conv_id": "crowd-b20c6892",
+          "old_conv_id": "chipgpt-adaa8403"
+        }
+      ],
+      "path_ids": [
+        "chipgpt-1281add3#0",
+        "chipgpt-adaa8403#0",
+        "crowd-b20c6892#0",
+        "gemmy-a0ccf9f0#0",
+        "chipgpt-1281add3",
+        "chipgpt-adaa8403",
+        "crowd-b20c6892",
+        "gemmy-a0ccf9f0",
+        "chipgpt-1281add3",
+        "chipgpt-adaa8403",
+        "crowd-b20c6892",
+        "gemmy-a0ccf9f0",
+        "topic:アプリ名",
+        "topic:収益化"
+      ],
+      "steps": [
+        {
+          "step": "cypher",
+          "ok": true,
+          "detail": "2 rows"
+        },
+        {
+          "step": "verify",
+          "ok": true,
+          "detail": "14 evidence nodes exist"
+        }
+      ],
+      "ms": 3676
+    }
+  },
+  "baseline": {
+    "What did I end up naming the app?": {
+      "answer": {
+        "en": "You decided to name the app \"Bookmark\".",
+        "ja": "アプリの名前は「Bookmark」に決めました。"
+      },
+      "vendor": "Chip GPT",
+      "memory_convs": 6
+    },
+    "Did my monetization plan change? Why?": {
+      "answer": {
+        "en": "Your monetization plan hasn't changed—you still intend to launch with a free app supported by ads and later introduce premium features. This approach lets you grow the user base first, then monetize more from engaged users.",
+        "ja": "あなたの収益化プランは変わっていません。まずは無料で広告収入を得てリリースし、後からプレミアム機能でマネタイズを拡大する方針です。"
+      },
+      "vendor": "Chip GPT",
+      "memory_convs": 6
+    },
+    "Did switching AIs ever make me reverse an earlier decision?": {
+      "answer": {
+        "en": "No, you haven't reversed any earlier decision because of switching AIs; your choices—like naming the app “Bookmark” and opting for a free‑with‑ads model—stayed consistent.",
+        "ja": "いいえ、AIを切り替えたことで以前の決定を覆したことはありません。アプリ名を「Bookmark」にしたり、無料＋広告モデルを選んだりと、決定は一貫しています。"
+      },
+      "vendor": "Chip GPT",
+      "memory_convs": 6
+    }
+  }
+}
